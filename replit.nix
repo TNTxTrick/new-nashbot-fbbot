@@ -1,3 +1,5 @@
 {pkgs}: {
-  deps = [ ];
+  deps = [
+    pkgs.nix-output-monitor
+   ];
 }

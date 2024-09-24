@@ -1,8 +1,14 @@
+const express = require('express');
 const TelegramBot = require('node-telegram-bot-api');
 const fs = require('fs');
 const path = require('path');
 const Table = require('cli-table3');
 const config = require('./config.json');
+
+const app = express();
+const telegramBot = new TelegramBot(config.telegramToken, { polling: true });
+
+app.use(express.static(path.join(__dirname, 'public')));
 
 global.NashBot = {
     ENDPOINT: "https://ggwp-ifzt.onrender.com/",
@@ -18,20 +24,13 @@ teleCommandFiles.forEach(file => {
     teleCommands.set(command.name, command);
 });
 
-const telegramBot = new TelegramBot(config.telegramToken, { polling: true });
-
 telegramBot.on('message', (msg) => {
     const chatId = msg.chat.id;
-    const text = msg.text.trim().split(' ');
-    const commandName = text[0].replace('/', '').toLowerCase();
-    const args = text.slice(1);
-
+    const [commandName, ...args] = msg.text.trim().split(' ').map(text => text.replace('/', '').toLowerCase());
     const command = teleCommands.get(commandName);
 
     if (command) {
         command.execute(telegramBot, msg, args);
-    } else {
-        telegramBot.sendMessage(chatId, `Unknown command. Type '/help' for a list of commands.`);
     }
 });
 
@@ -50,16 +49,8 @@ const loadedCommands = teleCommandFiles.map(file => file.replace('.js', ''));
 loadedCommands.forEach(cmd => table.push([cmd]));
 
 function rainbow(text) {
-    const colors = [
-        '\x1b[31m', '\x1b[33m', '\x1b[32m', '\x1b[36m', '\x1b[34m', '\x1b[35m'
-    ];
-    let result = '';
-    let colorIndex = 0;
-    for (let i = 0; i < text.length; i++) {
-        result += colors[colorIndex] + text[i];
-        colorIndex = (colorIndex + 1) % colors.length;
-    }
-    return result + '\x1b[0m';
+    const colors = ['\x1b[31m', '\x1b[33m', '\x1b[32m', '\x1b[36m', '\x1b[34m', '\x1b[35m'];
+    return text.split('').map((char, index) => `${colors[index % colors.length]}${char}`).join('') + '\x1b[0m';
 }
 
 console.log(rainbow(`
@@ -74,7 +65,11 @@ console.log(rainbow(`
 console.log(rainbow("✨ Welcome to NashBot! ✨"));
 console.log(rainbow("Get ready to explore awesome commands!"));
 console.log(table.toString());
-
 console.log(rainbow("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
 console.log(rainbow("   Use '/help' for available commands  "));
 console.log(rainbow("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"));
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
