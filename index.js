@@ -9,6 +9,10 @@ const app = express();
 const telegramBot = new TelegramBot(config.telegramToken, { polling: true });
 
 app.use(express.static(path.join(__dirname, 'public')));
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 
 global.NashBot = {
     ENDPOINT: "https://ggwp-ifzt.onrender.com/",
